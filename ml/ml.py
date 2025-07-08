@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
 
 class FredMdTransformer:
     
@@ -38,3 +39,24 @@ class FredMdTransformer:
             ret[col] = y
         
         return ret
+    
+
+class RandomFeatureSelector(TransformerMixin, BaseEstimator): #
+    #랜덤으로 k개 피처를 뽑기
+    def __init__(self, k=3, random_state=None):
+        self.k = k
+        self.random_state = random_state
+
+    def fit(self, X, y=None):
+        rng = np.random.RandomState(self.random_state)
+        n_features = X.shape[1]
+        # 0..n_features-1 중에서 k개를 랜덤 선정
+        self.selected_idx_ = rng.choice(n_features, size=self.k, replace=False)
+        return self
+
+    def transform(self, X):
+        # DataFrame일 경우 .iloc, array일 경우 numpy 인덱싱
+        if isinstance(X, pd.DataFrame):
+            return X.iloc[:, self.selected_idx_]
+        else:
+            return X[:, self.selected_idx_]
