@@ -60,3 +60,11 @@ class RandomFeatureSelector(TransformerMixin, BaseEstimator): #
             return X.iloc[:, self.selected_idx_]
         else:
             return X[:, self.selected_idx_]
+        
+# 데이터프레임을 병렬로 표시하기 위한 함수 정의
+from IPython.display import display_html
+def display_by_side(*args):
+    html_str=''
+    for df in args:
+        html_str+=df.to_html()
+    display_html(html_str.replace('table','table style="display:inline"'),raw=True)
