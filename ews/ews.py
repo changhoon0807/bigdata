@@ -34,7 +34,7 @@ from tqdm.auto import tqdm
 
 # 기본 설정
 warnings.filterwarnings(action='ignore')
-plt.rc('font', family='NanumGothic')
+plt.rc('font', family='Malgun Gothic')
 plt.rcParams['axes.unicode_minus'] = False
 
 # 기본 팔레트값
@@ -164,7 +164,7 @@ class Bidas:
 class Transform:
     """시계열 데이터 변환을 위한 utility 클래스"""
 
-    @staticmethod
+    @staticmethod # staticmethod : 클래스 내부에서 정의된 메서드를 클래스 인스턴스 없이 호출 가능하게 함
     def scale(x):
         """샘플의 평균과 표준편차로 표준화"""
         result = (x - x.mean())/x.std()
@@ -183,7 +183,7 @@ class Transform:
 
     @staticmethod
     def cmax(ts):
-        """CMAX 계산"""
+        """cmax 계산"""
         result = (-1*ts/ts.rolling(24).max())
         return result
 
@@ -317,21 +317,24 @@ def get_crises(cfpi, k=1, horizon=6, group_bgn_ext=3, group_end_ext=3):
     # 각 위기기간은 학습/예측시에 나눌 수 없는 하나의 그룹으로, 나머지는 각 데이터 포인트를 별개의 그룹으로 지정
     crises['groups'] = crises['ext_term'].rolling(2, min_periods=1).apply(lambda x: 0 if sum(x) == 2 else 1).cumsum()
     # 각 위기기간에서, CFPI가 정점을 찍은 후 내려오는 디레버리징 기간을 구분 (학습시 선택적으로 제외)
-    is_post_term = lambda x: ((x > cfpi.std()*k) & (x.cummax() == x.max()) & (x.cummax() == x.cummax().shift(1))) * 1
+    is_post_term = lambda x: ((x > cfpi.std()*k) & (x.cummax() == x.max()) & (x.cummax() == x.cummax().shift(1))) * 1 # * 1, booliean을 1, 0으로 바꾸기 위한 트릭
     crises['post_term'] = crises.groupby('groups')['cfpi'].apply(is_post_term).set_axis(crises.index)
     # 각 확장 위기기간에 대해 이전 {group_bgn_ext}개월과 이후 {group_end_ext}개월을 동일 그룹으로 지정 (버퍼)
     if group_bgn_ext + group_end_ext > 0:
-        get_group_scope = [lambda x: min(x.index)-group_bgn_ext, lambda x: max(x.index)+group_end_ext]
-        group_scope = crises[crises['ext_term'] == 1].groupby('groups')['ext_term'].agg(get_group_scope)
+        get_group_scope = [
+            lambda x: min(x.index)-group_bgn_ext, 
+            lambda x: max(x.index)+group_end_ext
+        ]
+        group_scope = crises[crises['ext_term'] == 1].groupby('groups')['ext_term'].agg(get_group_scope) # 각 그룹에 get_group_scope 적용, 행인덱스는 그룹번호
         prev_scope = crises.index.min()
         for group, scope in group_scope.iterrows():
-            assert prev_scope < scope[0]
+            assert prev_scope < scope[0] # 그룹 범위가 겹치지 않도록, assert 조건을 만족해야 한다.
             crises.loc[scope[0]:scope[1], 'groups'] = group
             prev_scope = scope[1]
     return crises
 
 
-def plot_cfpi(cfpi, gdp_growth, k, horizon=6, xlim=['1999-01', '2024-01']):
+def plot_cfpi(cfpi, gdp_growth, k, horizon=6, xlim=['1999-01', '2024-01'], fig_size=(10, 6)):
     """CFPI를 위기기간, GDP성장률과 함께 차트에 그린다.
 
     Args:
@@ -342,7 +345,7 @@ def plot_cfpi(cfpi, gdp_growth, k, horizon=6, xlim=['1999-01', '2024-01']):
         xlim: 표시 기간
     """
     crises = get_crises(cfpi, k, horizon)
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=fig_size)
     # CFPI 및 위기기간 차트 표시
     render_crises(crises, ax, True)
     # GDP성장률 및 국소최저점 차트 표시
@@ -406,7 +409,7 @@ def render_gdp_drop(gdp_growth, freq='Q', ax=None, hgrid=False):
     if hgrid:
         ax.axhline(y=0, linestyle=':')
     # GDP성장률이 국소최저점을 지나는 시점마다 차트에 세로축 표시
-    gdp_drops = gdp_growth.resample('Q').mean().agg(loc_min).index
+    gdp_drops = gdp_growth.resample('Q').mean().agg(loc_min).index # agg() : 그룹별 연산 수행
     for date in gdp_drops.asfreq(freq):
         ax.axvline(x=date, color='k', linestyle=':', linewidth=3)
 
@@ -463,7 +466,7 @@ def get_perf(Y, Y_pred, threshold=0.5, calc_auc=False):
         threshold: 분류 임계치
         calc_auc: AUC 점수 계산 여부
 
-    Returns:
+    Returns:ㄴ
         perf: 성능평가기준(acc, nsr, f1, auc 등)별 수치
     """
     # 입력받은 분류 임계치를 기준으로 confusion matrix 구성
@@ -635,7 +638,7 @@ def plot_roc_curve(preds):
     plt.figure(figsize=(6, 6))
     for model in model_names:
         fpr, tpr, _ = roc_curve(actl, preds[model])
-        plt.plot(fpr, tpr, lw=3, alpha=0.5, label='%s (avg. auc=%0.2f)' % (model, agg_perf[model]))
+        plt.plot(fpr, tpr, lw=3, alpha=0.5, label=model)
     plt.plot([0, 1], [0, 1], color='black', lw=2, linestyle='--')
     plt.xlim([0.0, 1.01])
     plt.ylim([0.0, 1.01])
