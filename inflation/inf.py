@@ -138,10 +138,6 @@ def get_train_data_v5(df0,
     #Xn = Xn.fillna(0)
     Xn = Xn.fillna(method = 'bfill')
     
-    # 결측치 보간 at head
-    #Xn = Xn.fillna(0)
-    Xn = Xn.fillna(method = 'bfill')
-    
     # 선형회귀를 위해 예측변수가 주어진 경우
     if predictors is not None:
         Xn = Xn.loc[:, predictors]
@@ -203,7 +199,7 @@ def align_error_by_week(error):
     mae = pd.DataFrame()
     rmse = pd.DataFrame()
 
-    hors = error.columns.get_level_values(0).unique()
+    hors = error.columns.get_level_values(0).unique() # 예측시계(hor) 추출 [0, 3, 12]
 
     for hor in hors:
         df = error[hor].dropna(how='all', axis=1) # axis=1: 열 방향으로 결측치 제거

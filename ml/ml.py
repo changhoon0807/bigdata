@@ -18,23 +18,23 @@ class FredMdTransformer:
             x = df[col]
             tcode = self.tcode_map[col] # col번째 변수의 tcode 값
             
-            if col == 'CPIAUCSL':
+            if col == 'CPIAUCSL': # 타겟
                 y = x.pct_change(12) * 100
-            else:
-                if tcode == 1:
+            else: # 피처
+                if tcode == 1: # 1: 그대로
                     y = x
-                elif tcode == 2:
+                elif tcode == 2: # 2: 차분
                     y = x.diff() # diff() default = 1
-                elif tcode == 3:
+                elif tcode == 3: # 3: 2차 차분
                     y = x.diff().diff()
-                elif tcode == 4:
+                elif tcode == 4: # 4: 로그
                     y = np.log(x)
-                elif tcode == 5:
+                elif tcode == 5: # 5: 로그 차분
                     y = np.log(x).diff()
-                elif tcode == 6:
+                elif tcode == 6: # 6: 로그 2차 차분
                     y = np.log(x).diff().diff()
-                elif tcode == 7:
-                    y = (x / x.shift(1) - 1.0).diff()
+                elif tcode == 7: # 7: 로그 차분 차분
+                    y = (x / x.shift(1) - 1.0).diff() # .shift(1) = x_{t-1}
                     
             ret[col] = y
         
